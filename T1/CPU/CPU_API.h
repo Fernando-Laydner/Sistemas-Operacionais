@@ -14,9 +14,9 @@ typedef struct cpu_estado_t{
 }cpu_estado_t;
 
 typedef struct cpu_t{
-    cpu_estado_t estado;
-    mem_t mem;
-    es_t es;
+    cpu_estado_t *estado;
+    mem_t *mem;
+    es_t *es;
 }cpu_t;
 
 cpu_estado_t *cpu_estado(cpu_t *cpu);

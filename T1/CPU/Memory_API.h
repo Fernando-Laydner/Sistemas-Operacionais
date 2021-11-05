@@ -7,7 +7,7 @@
 
 typedef struct mem_t{
     int size;
-    int memory[1];
+    int memory[];
 }mem_t;
 
 int mem_tam(mem_t *m);

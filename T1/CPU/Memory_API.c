@@ -7,11 +7,15 @@ int mem_tam(mem_t *m){
     return m->size;
 }
 
-void mem_escreve_tudo(mem_t *m){
-    for (int i = 0; i < m->size; i++){
-        printf("%d",m->memory[i]);
+void mem_escreve_tudo(mem_t *mem){
+    printf("[");
+    for (int i = 0; i < mem->size - 1; i++){
+        if (i != 0){
+            printf(",");
+        }
+        printf(" %d", mem->memory[i]);
     }
-    printf("\n");
+    printf("]\n");
 }
 
 mem_t *mem_cria(int tam){
@@ -63,8 +67,8 @@ int main(){
     mem_escreve(memoria, 3, 13);
     mem_escreve(memoria, 4, 14);
     mem_escreve_tudo(memoria);
-    mem_le(memoria, 1, &i);
+    mem_le(memoria, 3, &i);
     printf("lendo i novo: %d", i);
-    
+
 }
 */

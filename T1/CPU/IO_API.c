@@ -4,7 +4,7 @@
 
 
 err_t es_le(es_t *es, int dispositivo, int *pvalor){
-    if (dispositivo == es->IO){
+    if (es->IO == dispositivo){
         printf("Digite um numero:\n ->");
         scanf("%d", pvalor);
         return ERR_OK;
@@ -16,7 +16,7 @@ err_t es_le(es_t *es, int dispositivo, int *pvalor){
 }
 
 err_t es_escreve(es_t *es, int dispositivo, int valor){
-    if (dispositivo == es->IO){
+    if (es->IO == dispositivo){
         printf("Numero digitado: %d\n", valor);
         return ERR_OK;
     }
@@ -41,7 +41,7 @@ void es_muda(es_t *es, int dispositivo){
 
 /*
 int main(){
-    
+
     es_t *es;
 
     es = es_cria(); // iniciado como teclado
