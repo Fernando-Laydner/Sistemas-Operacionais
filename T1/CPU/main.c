@@ -51,9 +51,9 @@ err_t cpu_executa_1(cpu_t *cpu){
     if (cpu_estado(cpu)->modo != ERR_OK)
         return cpu_estado(cpu)->modo;
 
-    printf("\nA1 = %d\n", A1);
-    printf("Mem antes:");
-    mem_escreve_tudo(cpu->mem);
+    //printf("\nA1 = %d\n", A1);
+    //printf("Mem antes:");
+    //mem_escreve_tudo(cpu->mem);
 
     switch (A1){
         case 0:
@@ -123,12 +123,18 @@ err_t cpu_executa_1(cpu_t *cpu){
             cpu_estado(cpu)->modo = ERR_CPU_INSTR_INV;
             break;
     }
-    cpu_estado(cpu)->PC += 1;
-    if (cpu_estado(cpu)->modo == ERR_OK && !(A1 == 0 || A1 == 1 || A1 == 7 || A1 == 8 || A1 == 9 || A1 == 15)){
+    /*
+    if (){
         cpu_estado(cpu)->PC += 1;
+
     }
-    printf("Mem dps:");
-    mem_escreve_tudo(cpu->mem);
+    */
+
+    if (cpu_estado(cpu)->modo == ERR_OK && !(A1 == 16 || A1 == 17 || A1 == 18))
+        cpu_estado(cpu)->PC += 1;
+
+    //printf("Mem dps:");
+    //mem_escreve_tudo(cpu->mem);
     return cpu_estado(cpu)->modo;
 }
 
@@ -138,12 +144,12 @@ void imprime_estado(cpu_estado_t *estado){
 
 int main(){
     // programa para executar na nossa CPU
-    int progr[TAM] = { 2, 0, 7, 2, 10, 5, 17,       //  0      x=0; l=10
-                        20, 1,                     //  7 ali: print x
-                        9, 11, 17, 18, 7,      // 10      if ++x != l goto ali
-                        1,                       // 16      FIM
-                        0                       // 17 aqui tá o "l"
-                    };
+    int progr[TAM] = { 2, 0, 7, 2, 10, 5, 17,    //  0      x=0; l=10
+                         8, 20, 1,                 //  7 ali: print x
+                         9, 8, 11, 17, 18, 7,      // 10      if ++x != l goto ali
+                         1,                        // 16      FIM
+                         0                         // 17 aqui tá o "l"
+                       };
 
     // variáveis que representam o computador
     mem_t *mem = mem_cria(TAM);
@@ -166,12 +172,12 @@ int main(){
 
     // executa uma instrução por vez até parar
     while (true) {
-        imprime_estado(cpu_estado(cpu));
+        //imprime_estado(cpu_estado(cpu));
         err_t err = cpu_executa_1(cpu);
         if (err != ERR_OK) {
             printf("Erro na execução: %d\n", err);
             printf("Estado final:\n");
-            imprime_estado(cpu_estado(cpu));
+            //imprime_estado(cpu_estado(cpu));
             break;
         }
     }
