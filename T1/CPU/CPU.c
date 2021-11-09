@@ -1,8 +1,9 @@
 #include <stdlib.h>
+
 #include "CPU.h"
-#include "CPU_API.h"
 #include "Memory_API.h"
 #include "IO_API.h"
+#include "CPU_API.h"
 #include "Erro.h"
 
 err_t NOP(){
