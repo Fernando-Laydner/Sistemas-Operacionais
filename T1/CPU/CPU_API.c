@@ -8,7 +8,6 @@
 #include "CPU.h"
 
 
-
 cpu_estado_t *cpu_estado(cpu_t *cpu){
     cpu_estado_t *test;
     test = cpu->estado;
@@ -16,17 +15,14 @@ cpu_estado_t *cpu_estado(cpu_t *cpu){
 }
 
 void cpu_altera_estado(cpu_t *cpu, cpu_estado_t *estado){
-    // só isso?
     cpu->estado = estado;
 }
 
 void cpu_altera_memoria(cpu_t *cpu, mem_t *mem){
-    //cpu->mem = cpu_cria();
     cpu->mem = mem;
 }
 
 void cpu_altera_es(cpu_t *cpu, es_t *es){
-    // só isso?
     cpu->es = es;
 }
 
@@ -36,107 +32,125 @@ cpu_estado_t *cpu_estado_cria(){
     temp->PC = 0;
     temp->A = 0;
     temp->X = 0;
+    temp->complemento = 0;
     return temp;
+}
+
+void cpu_estado_destroi(cpu_estado_t *cpu_estado){
+    free(cpu_estado);
+}
+
+void cpu_estado_erro(cpu_estado_t *cpu_estado, err_t erro, int complemento){
+    cpu_estado->modo = erro;
+    cpu_estado->complemento = complemento;
 }
 
 cpu_t *cpu_cria(){
     cpu_t *temp = malloc(sizeof(cpu_t));
+
+    if (temp != NULL) {
+        temp->estado = NULL;
+        temp->mem = NULL;
+        temp->es = NULL;
+    }
+
     return temp;
+}
+
+void cpu_destroi(cpu_t *cpu){
+  es_destroi(cpu->es);
+  cpu_estado_destroi(cpu->estado);
+  mem_destroi(cpu->mem);
+  free(cpu);
 }
 
 err_t cpu_executa_1(cpu_t *cpu){
 
-    int A1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &A1);
-    if (cpu_estado(cpu)->modo != ERR_OK)
+    int OP_Code;
+    err_t erro = mem_le(cpu->mem, cpu_estado(cpu)->PC, &OP_Code);
+    if (erro != ERR_OK){
+        cpu_estado_erro(cpu_estado(cpu), erro, cpu_estado(cpu)->PC);
         return cpu_estado(cpu)->modo;
+    }
 
-    //printf("\nA1 = %d\n", A1);
+    printf("\nOP_Code = %d\n", OP_Code);
     //printf("Mem antes:");
     //mem_escreve_tudo(cpu->mem);
 
-    switch (A1){
+    switch (OP_Code){
         case 0:
-            cpu_estado(cpu)->modo = NOP();
+            NOP(cpu);
             break;
         case 1:
-            cpu_estado(cpu)->modo = PARA();
+            PARA(cpu);
             break;
         case 2:
-            cpu_estado(cpu)->modo = CARGI(cpu);
+            CARGI(cpu);
             break;
         case 3:
-            cpu_estado(cpu)->modo = CARGM(cpu);
+            CARGM(cpu);
             break;
         case 4:
-            cpu_estado(cpu)->modo = CARGX(cpu);
+            CARGX(cpu);
             break;
         case 5:
-            cpu_estado(cpu)->modo = ARMM(cpu);
+            ARMM(cpu);
             break;
         case 6:
-            cpu_estado(cpu)->modo = ARMX(cpu);
+            ARMX(cpu);
             break;
         case 7:
-            cpu_estado(cpu)->modo = MVAX(cpu);
+            MVAX(cpu);
             break;
         case 8:
-            cpu_estado(cpu)->modo = MVXA(cpu);
+            MVXA(cpu);
             break;
         case 9:
-            cpu_estado(cpu)->modo = INCX(cpu);
+            INCX(cpu);
             break;
         case 10:
-            cpu_estado(cpu)->modo = SOMA(cpu);
+            SOMA(cpu);
             break;
         case 11:
-            cpu_estado(cpu)->modo = SUB(cpu);
+            SUB(cpu);
             break;
         case 12:
-            cpu_estado(cpu)->modo = MULT(cpu);
+            MULT(cpu);
             break;
         case 13:
-            cpu_estado(cpu)->modo = DIV(cpu);
+            DIV(cpu);
             break;
         case 14:
-            cpu_estado(cpu)->modo = RESTO(cpu);
+            RESTO(cpu);
             break;
         case 15:
-            cpu_estado(cpu)->modo = NEG(cpu);
+            NEG(cpu);
             break;
         case 16:
-            cpu_estado(cpu)->modo = DESV(cpu);
+            DESV(cpu);
             break;
         case 17:
-            cpu_estado(cpu)->modo = DESVZ(cpu);
+            DESVZ(cpu);
             break;
         case 18:
-            cpu_estado(cpu)->modo = DESVNZ(cpu);
+            DESVNZ(cpu);
             break;
         case 19:
-            cpu_estado(cpu)->modo = LE(cpu);
+            LE(cpu);
             break;
         case 20:
-            cpu_estado(cpu)->modo = ESCR(cpu);
+            ESCR(cpu);
             break;
         default:
-            cpu_estado(cpu)->modo = ERR_CPU_INSTR_INV;
+            cpu_estado_erro(cpu_estado(cpu), ERR_CPU_INSTR_INV, 0);
             break;
     }
-    /*
-    if (){
-        cpu_estado(cpu)->PC += 1;
-
-    }
-    */
-
-    if (cpu_estado(cpu)->modo == ERR_OK && !(A1 == 16 || A1 == 17 || A1 == 18))
-        cpu_estado(cpu)->PC += 1;
 
     //printf("Mem dps:");
     //mem_escreve_tudo(cpu->mem);
     return cpu_estado(cpu)->modo;
 }
+
 
 void imprime_estado(cpu_estado_t *estado){
     printf( "\nPC: %d\nA: %d\nX: %d\nModo: %d", estado->PC, estado->A, estado->X, estado->modo);

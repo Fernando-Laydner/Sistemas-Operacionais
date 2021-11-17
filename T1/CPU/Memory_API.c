@@ -49,26 +49,3 @@ err_t mem_escreve(mem_t *m, int endereco, int valor){
     return ERR_MEM_END_INV;
 
 }
-
-/*
-int main(){
-    mem_t *memoria = mem_cria(5);
-
-    mem_escreve_tudo(memoria);
-
-    printf("size: %d\n", mem_tam(memoria));
-
-    int i;
-    mem_le(memoria, 1, &i);
-    printf("i: %d\n", i);
-    mem_escreve(memoria, 0, 10);
-    mem_escreve(memoria, 1, 11);
-    mem_escreve(memoria, 2, 12);
-    mem_escreve(memoria, 3, 13);
-    mem_escreve(memoria, 4, 14);
-    mem_escreve_tudo(memoria);
-    mem_le(memoria, 3, &i);
-    printf("lendo i novo: %d", i);
-
-}
-*/

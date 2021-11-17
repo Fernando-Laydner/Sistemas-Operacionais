@@ -1,179 +1,245 @@
 #include <stdlib.h>
 
+#include "CPU_API.h"
 #include "CPU.h"
 #include "Memory_API.h"
 #include "IO_API.h"
-#include "CPU_API.h"
 #include "Erro.h"
 
-err_t NOP(){
-    return ERR_OK;
-}
-
-err_t PARA(){
-    return ERR_CPU_PARADA;
-}
-
-err_t CARGI(cpu_t *cpu){
-    cpu_estado(cpu)->PC += 1;
-    return mem_le(cpu->mem, cpu_estado(cpu)->PC, &cpu_estado(cpu)->A);
-}
-
-err_t CARGM(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
+// Funções complementares
+err_t ARG(cpu_t *cpu, int pos, int *arg){
+    err_t erro = mem_le(cpu->mem, cpu_estado(cpu)->PC + pos, arg);
+    if (erro != ERR_OK){
+        cpu_estado_erro(cpu_estado(cpu), erro, cpu_estado(cpu)->PC + pos);
         return cpu_estado(cpu)->modo;
-    return mem_le(cpu->mem, temp, &cpu_estado(cpu)->A);
+    }
+    printf("A1: %d\n", *arg);
+    return cpu_estado(cpu)->modo;
 }
 
-err_t CARGX(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
-    return mem_le(cpu->mem, temp + cpu_estado(cpu)->X, &cpu_estado(cpu)->A);
+void INCPC(cpu_t *cpu, int qnt){
+    cpu_estado(cpu)->PC += qnt;
 }
 
-err_t ARMM(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
-    return mem_escreve(cpu->mem, temp, cpu_estado(cpu)->A);
+err_t DISP(cpu_t *cpu, int *dispositivo){
+    return ARG(cpu, 1, dispositivo);
 }
 
-err_t ARMX(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
-    return mem_escreve(cpu->mem, temp + cpu_estado(cpu)->X, cpu_estado(cpu)->A);
+
+// Funções da CPU
+void NOP(cpu_t *cpu){ // 0
+    INCPC(cpu, 1);
 }
 
-err_t MVAX(cpu_t *cpu){
+void PARA(cpu_t *cpu){ // 1
+    cpu_estado_erro(cpu_estado(cpu), ERR_CPU_PARADA, 0);
+}
+
+void CARGI(cpu_t *cpu){ // 2
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
+
+    cpu_estado(cpu)->A = A1;
+
+    INCPC(cpu, 2);
+}
+
+void CARGM(cpu_t *cpu){ // 3
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
+
+    err_t erro = mem_le(cpu->mem, A1, &cpu_estado(cpu)->A);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1);
+        return;
+    }
+
+    INCPC(cpu, 2);
+}
+
+void CARGX(cpu_t *cpu){ // 4
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
+
+    err_t erro = mem_le(cpu->mem, A1, &cpu_estado(cpu)->A);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1 + cpu_estado(cpu)->X);
+        return;
+    }
+
+    INCPC(cpu, 2);
+}
+
+void ARMM(cpu_t *cpu){ // 5
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
+
+    err_t erro = mem_escreve(cpu->mem, A1, cpu_estado(cpu)->A);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1);
+        return;
+    }
+
+    INCPC(cpu, 2);
+}
+
+void ARMX(cpu_t *cpu){ // 6
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
+
+    err_t erro = mem_escreve(cpu->mem, A1 + cpu_estado(cpu)->X, cpu_estado(cpu)->A);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1 + cpu_estado(cpu)->X);
+        return;
+    }
+
+    INCPC(cpu, 2);
+}
+
+void MVAX(cpu_t *cpu){ // 7
     cpu_estado(cpu)->X = cpu_estado(cpu)->A;
-    return ERR_OK;
+    INCPC(cpu, 1);
 }
 
-err_t MVXA(cpu_t *cpu){
+void MVXA(cpu_t *cpu){ // 8
     cpu_estado(cpu)->A = cpu_estado(cpu)->X;
-    return ERR_OK;
+    INCPC(cpu, 1);
 }
 
-err_t INCX(cpu_t *cpu){
+void INCX(cpu_t *cpu){ // 9
     cpu_estado(cpu)->X++;
-    return ERR_OK;
+    INCPC(cpu, 1);
 }
 
-err_t SOMA(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
+void SOMA(cpu_t *cpu){ // 10
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
 
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, temp, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
-    cpu_estado(cpu)->A += temp;
-    return ERR_OK;
+    err_t erro = mem_le(cpu->mem, A1, &A1);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1);
+        return;
+    }
+
+    cpu_estado(cpu)->A += A1;
+    INCPC(cpu, 2);
 }
 
-err_t SUB(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
+void SUB(cpu_t *cpu){ // 11
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
 
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, temp, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
-    cpu_estado(cpu)->A -= temp;
-    return ERR_OK;
+    err_t erro = mem_le(cpu->mem, A1, &A1);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1);
+        return;
+    }
+
+    cpu_estado(cpu)->A -= A1;
+    INCPC(cpu, 2);
 }
 
-err_t MULT(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
+void MULT(cpu_t *cpu){ // 12
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
 
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, temp, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
-    cpu_estado(cpu)->A *= temp;
-    return ERR_OK;
+    err_t erro = mem_le(cpu->mem, A1, &A1);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1);
+        return;
+    }
+
+    cpu_estado(cpu)->A *= A1;
+    INCPC(cpu, 2);
 }
 
-err_t DIV(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
+void DIV(cpu_t *cpu){ // 13
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
 
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, temp, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
-    cpu_estado(cpu)->A /= temp;
-    return ERR_OK;
+    err_t erro = mem_le(cpu->mem, A1, &A1);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1);
+        return;
+    }
+
+    cpu_estado(cpu)->A /= A1;
+    INCPC(cpu, 2);
 }
 
-err_t RESTO(cpu_t *cpu){
-    int temp;
-    cpu_estado(cpu)->PC += 1;
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, cpu_estado(cpu)->PC, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
+void RESTO(cpu_t *cpu){ // 14
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
 
-    cpu_estado(cpu)->modo = mem_le(cpu->mem, temp, &temp);
-    if (cpu_estado(cpu)->modo != ERR_OK)
-        return cpu_estado(cpu)->modo;
-    cpu_estado(cpu)->A %= temp;
-    return ERR_OK;
+    err_t erro = mem_le(cpu->mem, A1, &A1);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, A1);
+        return;
+    }
+
+    cpu_estado(cpu)->A %= A1;
+    INCPC(cpu, 2);
 }
 
-err_t NEG(cpu_t *cpu){
+void NEG(cpu_t *cpu){ // 15
     cpu_estado(cpu)->A *= -1;
-    return ERR_OK;
+    INCPC(cpu, 1);
 }
 
-err_t DESV(cpu_t *cpu){
-    cpu_estado(cpu)->PC += 1;
-    return mem_le(cpu->mem, cpu_estado(cpu)->PC, &cpu_estado(cpu)->PC);
+void DESV(cpu_t *cpu){ // 16
+    int A1;
+    if (ARG(cpu, 1, &A1))
+        return;
+
+    cpu_estado(cpu)->PC = A1;
 }
 
-err_t DESVZ(cpu_t *cpu){
-    if (cpu_estado(cpu)->A == 0){
+void DESVZ(cpu_t *cpu){ // 17
+    if (cpu_estado(cpu)->A == 0)
         return DESV(cpu);
-    }
-    cpu_estado(cpu)->PC += 1;
-    return ERR_OK;
+    INCPC(cpu, 2);
 }
 
-err_t DESVNZ(cpu_t *cpu){
-    if (cpu_estado(cpu)->A != 0){
+void DESVNZ(cpu_t *cpu){ // 18
+    if (cpu_estado(cpu)->A != 0)
         return DESV(cpu);
+    INCPC(cpu, 2);
+}
+
+void LE(cpu_t *cpu){ // 19
+    int dispositivo;
+    if (DISP(cpu, &dispositivo))
+        return;
+
+    err_t erro = es_le(cpu->es, dispositivo, &cpu_estado(cpu)->A);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, dispositivo);
+        return;
     }
-    cpu_estado(cpu)->PC += 1;
-    return ERR_OK;
+
+    INCPC(cpu, 2);
 }
 
-err_t LE(cpu_t *cpu){
-    cpu_estado(cpu)->PC += 1;
-    mem_le(cpu->mem, cpu_estado(cpu)->PC, &cpu->es->IO);
-    return es_le(cpu->es, 0, &cpu_estado(cpu)->A);
-}
+void ESCR(cpu_t *cpu){ // 20
+    int dispositivo;
+    if (DISP(cpu, &dispositivo))
+        return;
 
-err_t ESCR(cpu_t *cpu){
-    cpu_estado(cpu)->PC += 1;
-    mem_le(cpu->mem, cpu_estado(cpu)->PC, &cpu->es->IO);
-    return es_escreve(cpu->es, 1, cpu_estado(cpu)->A);
+    err_t erro = es_escreve(cpu->es, dispositivo, cpu_estado(cpu)->A);
+    if (erro){
+        cpu_estado_erro(cpu_estado(cpu), erro, dispositivo);
+        return;
+    }
+
+    INCPC(cpu, 2);
 }
